@@ -1,0 +1,75 @@
+#!/bin/bash
+
+# Prompt user for AWS access key
+AWS_ACCESS_KEY=$(zenity --entry --title="AWS Access Key" --text="Enter your AWS Access Key:" --hide-text )
+
+# Prompt user for AWS secret key
+AWS_SECRET_KEY=$(zenity --entry --title="AWS Secret Key" --text="Enter your AWS Secret Key:" --hide-text )
+
+# Pormpt user region
+AWS_region=$(zenity --entry --title="AWS Region" --text="Enter your aws region:" --entry-text us-east-1 )
+
+# Set environment variables
+export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY"
+export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_KEY"
+export AWS_DEFAULT_REGION="$AWS_region"
+
+# Verify credentials
+if aws sts get-caller-identity; then
+  echo "AWS Credentials Set Successfully!"
+else
+  echo "Your Credentials Is Wrong"
+  exit
+fi
+
+# Select resource to launch 
+Resource=$(zenity --list   --title="Choose your resource"   --column="Resources"  --text="Resource" "EC2" "S3_Bucket" "EFS")
+
+
+
+case $Resource in
+  EC2)
+	  AMI=$(zenity --entry --title "AMi ID" --text="Please Enter or Select AMi ID"   --entry-text ami-0440d3b780d96b29d ami-0c7217cdde317cfec  ami-0f9c44e98edf38a2b ami-05efd9e66ddc3cf4b)
+	  TYPE=$(zenity --entry --title "Intance Type" --text="Please Enter or Select Istance Type"   --entry-text t2.micro t2.nano t2.medium t1.micro t3.nano t3.micro t3.small t3.medium )
+	  KEY=$(zenity --entry --title "KEY PAIR" --text="Please Enter Key Pair Name" --entry-text abhay-key )
+	  SG=$(zenity --entry --title "Security Group" --text="Please Enter Security Group ID" --entry-text sg-0909f251db81f9fab )
+	  aws ec2 run-instances --image-id $AMI --instance-type $TYPE --key-name $KEY --security-group-ids $SG
+    ;;
+  S3_Bucket)
+	  S3=$(zenity --entry --title "S3 Name" --text="Please Enter unique name to S3 bucket")
+	  aws s3api create-bucket --bucket $S3 --region us-east-1
+    ;;
+  EFS)
+	  aws efs create-file-system
+    ;;
+  *)
+    echo "Invalid choice" 
+    ;;
+esac
+
+(
+echo "10" ; sleep 1
+echo "# ehecking resource" ; sleep 1
+echo "20" ; sleep 1
+echo "# resource creating" ; sleep 1
+echo "50" ; sleep 1
+echo " resource is now online" ; sleep 1
+echo "75" ; sleep 1
+echo "# all done" ; sleep 1
+echo "100" ; sleep 1
+) |
+zenity --progress \
+  --title="Update System Logs" \
+  --text="Scanning mail logs..." \
+  --percentage=0
+
+if [ "$?" = -1 ] ; then
+        zenity --error \
+          --text="Update canceled."
+fi
+
+if [[ $? -eq 0 ]]; then
+  echo "New $Resource is created"
+else 
+  echo "You did not select anything"
+fi
